@@ -1,6 +1,6 @@
 package io.github.dhruvphumbra.dwollaapiclient
 
-import cats.effect.{IO, IOApp}
+import cats.effect.{ExitCode, IO, IOApp}
 
-object Main extends IOApp.Simple:
-  val run = DwollaapiclientServer.run[IO]
+object Main extends IOApp:
+  override def run(args: List[String]): IO[ExitCode] = DwollaApiClientServer.run[IO](args)

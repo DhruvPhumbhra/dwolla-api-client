@@ -1,18 +1,21 @@
 package io.github.dhruvphumbra.dwollaapiclient
 
-import cats.effect.{Async, Resource}
+import cats.effect.{Async, ExitCode, Resource}
 import cats.syntax.all.*
 import com.comcast.ip4s.*
 import org.http4s.{Request, Uri}
 import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.implicits.*
 
-object DwollaapiclientServer:
+object DwollaApiClientServer:
 
-  def run[F[_]: Async]: F[Nothing] = {
+  def run[F[_]: Async](args: List[String]): F[ExitCode] = {
     for {
       client <- EmberClientBuilder.default[F].build
       httpBrokerAlg = HttpBroker.impl[F](client)
+      argumentParser = ArgumentParser.impl
+
+      _ = println(argumentParser.parse(args))
 //      helloWorldAlg = HelloWorld.impl[F]
 //      jokeAlg = Jokes.impl[F](client)
 //
@@ -30,4 +33,4 @@ object DwollaapiclientServer:
 //          .withHttpApp(finalHttpApp)
 //          .build
     } yield ()
-  }.useForever
+  }.useForever.map(_ => ExitCode.Success)
