@@ -6,7 +6,8 @@ import com.comcast.ip4s.*
 import org.http4s.{Request, Uri}
 import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.implicits.*
-import cats.effect.syntax.resource._
+import cats.effect.syntax.resource.*
+import io.github.dhruvphumbra.dwollaapiclient.DwollaModels.{CreateReceiveOnlyCustomerRequest, CreateUnverifiedCustomerRequest}
 
 object DwollaApiClientServer:
 
@@ -22,6 +23,12 @@ object DwollaApiClientServer:
 
       token <- dwollaApiAlg.getAccessToken.toResource
       _ = println(s"token is $token")
+
+      ucr <- dwollaApiAlg.createCustomer(CreateUnverifiedCustomerRequest("first", "last", "fake5@email.com")).toResource
+      _ = println(s"UCR creation response is $ucr")
+
+      ro <- dwollaApiAlg.createCustomer(CreateReceiveOnlyCustomerRequest("first", "last", "fake6@email.com", Some("biz name"))).toResource
+      _ = println(s"RO creation response status is $ro")
 
 
 //      helloWorldAlg = HelloWorld.impl[F]
@@ -41,4 +48,4 @@ object DwollaApiClientServer:
 //          .withHttpApp(finalHttpApp)
 //          .build
     } yield ()
-  }.useForever.map(_ => ExitCode.Success)
+  }.use_.map(_ => ExitCode.Success)
