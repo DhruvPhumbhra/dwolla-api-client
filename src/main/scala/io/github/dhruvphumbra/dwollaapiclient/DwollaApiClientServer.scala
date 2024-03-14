@@ -6,16 +6,24 @@ import com.comcast.ip4s.*
 import org.http4s.{Request, Uri}
 import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.implicits.*
+import cats.effect.syntax.resource._
 
 object DwollaApiClientServer:
 
   def run[F[_]: Async](args: List[String]): F[ExitCode] = {
     for {
       client <- EmberClientBuilder.default[F].build
-      httpBrokerAlg = HttpBroker.impl[F](client)
       argumentParser = ArgumentParser.impl
+      config = argumentParser.parse(args)
 
-      _ = println(argumentParser.parse(args))
+      httpBrokerAlg = HttpBroker.impl[F](client)
+
+      dwollaApiAlg = DwollaApi.impl[F](httpBrokerAlg)(config)
+
+      token <- dwollaApiAlg.getAccessToken.toResource
+      _ = println(s"token is $token")
+
+
 //      helloWorldAlg = HelloWorld.impl[F]
 //      jokeAlg = Jokes.impl[F](client)
 //

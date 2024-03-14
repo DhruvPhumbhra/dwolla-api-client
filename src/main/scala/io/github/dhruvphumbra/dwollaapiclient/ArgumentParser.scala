@@ -1,5 +1,7 @@
 package io.github.dhruvphumbra.dwollaapiclient
 
+import org.http4s.Uri
+
 import scala.annotation.tailrec
 
 enum Env:
@@ -15,6 +17,12 @@ object Env:
     case "sandbox" => Sandbox
     case "production" => Production
     case _ => throw new IllegalArgumentException("Invalid environment")
+    
+  def getBaseUri(e: Env): Uri = e match
+    case Env.Local => Uri.unsafeFromString("http://localhost:17188")
+    case Env.Devint => Uri.unsafeFromString("https://api-devint.dwolla.com")
+    case Env.Sandbox => Uri.unsafeFromString("https://api-sandbox.dwolla.com")
+    case Env.Production => Uri.unsafeFromString("https://api.dwolla.com")
 
 case class Config(env: Env, clientId: String, clientSecret: String)
 
