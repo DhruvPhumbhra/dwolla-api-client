@@ -30,22 +30,33 @@ object DwollaApiClientServer:
       ro <- dwollaApiAlg.createCustomer(CreateCustomerRequest.CreateReceiveOnlyCustomerRequest("first", "last", "fake6@email.com", Some("biz name"))).toResource
       _ = println(s"RO creation response status is $ro")
 
+      vpc <- dwollaApiAlg.createCustomer(CreateCustomerRequest.CreateVerifiedPersonalCustomerRequest("first", "last", "vpc@email.com", "123 main st", "Chicago", "IL", "60123", "1990-01-01", "6789")).toResource
+      _ = println(s"VPC creation response status is $vpc")
 
-//      helloWorldAlg = HelloWorld.impl[F]
-//      jokeAlg = Jokes.impl[F](client)
-//
-//      httpApp = (
-//        DwollaapiclientRoutes.helloWorldRoutes[F](helloWorldAlg) <+>
-//        DwollaapiclientRoutes.jokeRoutes[F](jokeAlg)
-//      ).orNotFound
-//
-//      finalHttpApp = Logger.httpApp(true, true)(httpApp)
-//
-//      _ <-
-//        EmberServerBuilder.default[F]
-//          .withHost(ipv4"0.0.0.0")
-//          .withPort(port"8080")
-//          .withHttpApp(finalHttpApp)
-//          .build
+      sp <- dwollaApiAlg.createCustomer(
+        CreateCustomerRequest.CreateVerifiedSoleProprietorshipCustomerRequest("first", "last", "sp@email.com", "123 main st", "Chicago", "IL", "60123", "1990-01-01", "6789", "SP biz", "9ed3f670-7d6f-11e3-b1ce-5404a6144203")
+      ).toResource
+      _ = println(s"SP creation response status is $sp")
+
+      llc <- dwollaApiAlg.createCustomer(
+        CreateCustomerRequest.CreateVerifiedBusinessCustomerRequest(
+          "first",
+          "last",
+          "llc2@email.com",
+          "123 main st",
+          "Chicago",
+          "IL",
+          "60123",
+          "1990-01-01",
+          "6789",
+          "SP biz",
+          "9ed3f670-7d6f-11e3-b1ce-5404a6144203",
+          "llc",
+          "00-0000000",
+          BusinessController("cfirst", "clast", "CEO", "1990-02-02", ControllerAddress("456 2nd st", None, None, "Chicago", "IL", Some("60456"), "US"), None, Some("6789"))
+        )
+      ).toResource
+      _ = println(s"LLC creation response status is $llc")
+
     } yield ()
   }.use_.map(_ => ExitCode.Success)

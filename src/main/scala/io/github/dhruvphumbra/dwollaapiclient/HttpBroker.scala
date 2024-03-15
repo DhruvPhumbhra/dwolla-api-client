@@ -33,9 +33,6 @@ object HttpBroker:
   }
 
   def impl[F[_]: Concurrent](C: Client[F]) = new HttpBroker[F]:
-//    implicit val statusMirror: Mirror.Of[Status] = Mirror.fromProductTyped[Status]
-//    implicit val statusDecoder: Decoder[Status] = Decoder.derived[Status]
-//    implicit val statusEntityDecoder: EntityDecoder[F, Status] = jsonOf
 
     override def makeRequest[T](req: Request[F])(implicit decoder: EntityDecoder[F, T]): F[T] =
       C.expectOr[T](req)(toHttpException(req, _))
