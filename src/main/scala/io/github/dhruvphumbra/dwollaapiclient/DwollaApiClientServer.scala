@@ -7,7 +7,7 @@ import org.http4s.{Request, Uri}
 import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.implicits.*
 import cats.effect.syntax.resource.*
-import io.github.dhruvphumbra.dwollaapiclient.DwollaModels.{CreateReceiveOnlyCustomerRequest, CreateUnverifiedCustomerRequest}
+import io.github.dhruvphumbra.dwollaapiclient.models.*
 
 object DwollaApiClientServer:
 
@@ -24,10 +24,10 @@ object DwollaApiClientServer:
       token <- dwollaApiAlg.getAccessToken.toResource
       _ = println(s"token is $token")
 
-      ucr <- dwollaApiAlg.createCustomer(CreateUnverifiedCustomerRequest("first", "last", "fake5@email.com")).toResource
+      ucr <- dwollaApiAlg.createCustomer(CreateCustomerRequest.CreateReceiveOnlyCustomerRequest("first", "last", "fake5@email.com")).toResource
       _ = println(s"UCR creation response is $ucr")
 
-      ro <- dwollaApiAlg.createCustomer(CreateReceiveOnlyCustomerRequest("first", "last", "fake6@email.com", Some("biz name"))).toResource
+      ro <- dwollaApiAlg.createCustomer(CreateCustomerRequest.CreateReceiveOnlyCustomerRequest("first", "last", "fake6@email.com", Some("biz name"))).toResource
       _ = println(s"RO creation response status is $ro")
 
 

@@ -7,7 +7,7 @@ import org.http4s.circe.*
 import org.http4s.headers.{Accept, Authorization, `Content-Type`}
 import org.http4s.{Headers, *}
 import io.circe.literal.json
-import io.github.dhruvphumbra.dwollaapiclient.DwollaModels.{AuthToken, CreateCustomerRequest}
+import io.github.dhruvphumbra.dwollaapiclient.models.*
 import org.typelevel.ci.CIStringSyntax
 
 trait DwollaApi[F[_]]:
