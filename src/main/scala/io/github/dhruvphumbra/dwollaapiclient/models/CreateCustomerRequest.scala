@@ -1,7 +1,7 @@
 package io.github.dhruvphumbra.dwollaapiclient.models
 
 import cats.effect.Concurrent
-import io.circe.derivation.{Configuration, ConfiguredEnumCodec, ConfiguredEnumEncoder}
+import io.circe.derivation.{Configuration, ConfiguredEnumCodec, ConfiguredEnumEncoder, ConfiguredEncoder}
 import io.circe.literal.json
 import io.circe.{Decoder, Encoder, Json}
 import org.http4s.circe.*
@@ -172,11 +172,17 @@ import org.http4s.*
 //  given[F[_] : Concurrent]: EntityEncoder[F, CreateVerifiedBusinessCustomerRequest] = jsonEncoderOf
 
 object CreateCustomerRequest:
-  given Configuration = Configuration.default.withDiscriminator("_type").withKebabCaseMemberNames
+  // TODO: This is a smell but there is no way to fix this right now.
+//  given Configuration = Configuration.default.withDiscriminator("__requestType")
+
+  given Encoder[CreateCustomerRequest] =
+    ConfiguredEncoder
+      .derive[CreateCustomerRequest](discriminator = Some("__requestType"))
+      .mapJson(j => j.deepDropNullValues.mapObject(_.remove("__requestType")))
   given[F[_] : Concurrent]: EntityDecoder[F, CreateCustomerRequest] = jsonOf
 
   given[F[_] : Concurrent]: EntityEncoder[F, CreateCustomerRequest] = jsonEncoderOf
-enum CreateCustomerRequest derives Decoder, ConfiguredEnumEncoder:
+enum CreateCustomerRequest derives Decoder:
   //  val firstName: String
   //  val lastName: String
   //  val email: String
