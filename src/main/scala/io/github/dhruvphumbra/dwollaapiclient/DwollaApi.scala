@@ -19,14 +19,12 @@ import scala.concurrent.duration.*
 
 trait DwollaApi[F[_]]:
   def getAuthToken: F[String]
-
   def createCustomer(customer: CreateCustomerRequest): F[Either[Throwable, Status]]
-
   def getCustomer(id: UUID): F[Json]
-
   def listAndSearchCustomers(req: ListAndSearchCustomersRequest): F[Json]
-  
   def createFundingSourceForCustomer(id: UUID, req: CreateFundingSourceRequest): F[Either[Throwable, Status]]
+  def getFundingSource(id: UUID): F[Json]
+  def listFundingSourceForCustomer(id: UUID, removed: Option[Boolean] = None): F[Json]
 
 object DwollaApi:
   def apply[F[_]](implicit ev: DwollaApi[F]): DwollaApi[F] = ev
@@ -125,5 +123,38 @@ object DwollaApi:
                   Authorization(Credentials.Token(AuthScheme.Bearer, token))
                 )
               ).withEntity(fs)
+            )
+        }
+
+      override def getFundingSource(id: UUID): F[Json] =
+        getAuthToken.flatMap { token =>
+          httpBroker
+            .makeRequest[Json](
+              Request[F](
+                Method.GET,
+                baseUri / "funding-sources" / id,
+                headers = Headers(
+                  Header.Raw(ci"Accept", "application/vnd.dwolla.v1.hal+json"),
+                  `Content-Type`(MediaType.application.`json`),
+                  Authorization(Credentials.Token(AuthScheme.Bearer, token))
+                )
+              )
+            )
+        }
+
+      override def listFundingSourceForCustomer(id: UUID, removed: Option[Boolean]): F[Json] =
+        getAuthToken.flatMap { token =>
+          httpBroker
+            .makeRequest[Json](
+              Request[F](
+                Method.GET,
+                baseUri / "customers" / id / "funding-sources"
+                  +?? ("removed", removed),
+                headers = Headers(
+                  Header.Raw(ci"Accept", "application/vnd.dwolla.v1.hal+json"),
+                  `Content-Type`(MediaType.application.`json`),
+                  Authorization(Credentials.Token(AuthScheme.Bearer, token))
+                )
+              )
             )
         }

@@ -69,13 +69,16 @@ object Main extends IOApp:
 //        get <- dwollaApiAlg.getCustomer(UUID.fromString("1e47f98b-8f58-4df6-86fb-80604f071b0f")).toResource
 //        _ = println(s"get customer response is $get")
 
-        fs <- dwollaApiAlg.createFundingSourceForCustomer(
-          UUID.fromString("1e47f98b-8f58-4df6-86fb-80604f071b0f"),
-            FundingSourceRequest(
-              accountNumber = "68839835684", routingNumber = "071101307", `type` = Checking, name = "Test Bank"
-            )
-          ).toResource
-        _ = println(s"created funding source is $fs")
+//        fs <- dwollaApiAlg.createFundingSourceForCustomer(
+//          UUID.fromString("1e47f98b-8f58-4df6-86fb-80604f071b0f"),
+//            FundingSourceRequest(
+//              accountNumber = "68839835684", routingNumber = "071101307", `type` = Checking, name = "Test Bank"
+//            )
+//          ).toResource
+//        _ = println(s"created funding source is $fs")
+
+        listFs <- dwollaApiAlg.listFundingSourceForCustomer(UUID.fromString("1e47f98b-8f58-4df6-86fb-80604f071b0f")).toResource
+        _ = println(s"list funding source is $listFs")
 //
 //        lando <- dwollaApiAlg.listAndSearchCustomers(ListAndSearchCustomersRequest(limit = Some(1), offset = Some(5))).toResource
 //        _ = println(s"get customer list response is $lando")
