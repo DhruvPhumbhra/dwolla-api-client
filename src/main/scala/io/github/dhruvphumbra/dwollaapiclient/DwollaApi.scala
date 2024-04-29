@@ -2,17 +2,17 @@ package io.github.dhruvphumbra.dwollaapiclient
 
 import cats.effect.Concurrent
 import cats.syntax.all.*
+import io.chrisdavenport.mules.{Cache, MemoryCache}
 import io.circe.Decoder
+import io.circe.literal.json
+import io.circe.Json
+import io.github.dhruvphumbra.dwollaapiclient.models.*
+import io.github.dhruvphumbra.dwollaapiclient.HttpBroker.HttpException
 import org.http4s.circe.*
 import org.http4s.headers.{Accept, Authorization, `Content-Type`}
 import org.http4s.{Headers, *}
 import org.http4s.dsl.io.*
-import io.circe.literal.json
-import io.circe.Json
-import io.github.dhruvphumbra.dwollaapiclient.models.*
 import org.typelevel.ci.CIStringSyntax
-import io.chrisdavenport.mules.{Cache, MemoryCache}
-import io.github.dhruvphumbra.dwollaapiclient.HttpBroker.HttpException
 
 import java.util.UUID
 import scala.concurrent.duration.*
@@ -25,11 +25,13 @@ trait DwollaApi[F[_]]:
   def getCustomer(id: UUID): F[Json]
 
   def listAndSearchCustomers(req: ListAndSearchCustomersRequest): F[Json]
+  
+  def createFundingSourceForCustomer(id: UUID, req: CreateFundingSourceRequest): F[Either[Throwable, Status]]
 
 object DwollaApi:
   def apply[F[_]](implicit ev: DwollaApi[F]): DwollaApi[F] = ev
 
-  def impl[F[_] : Concurrent](httpBroker: HttpBroker[F])(config: Config, cache: Cache[F, String, String]): DwollaApi[F] = {
+  def impl[F[_] : Concurrent](httpBroker: HttpBroker[F])(config: Config, cache: Cache[F, String, String]): DwollaApi[F] =
     new DwollaApi[F]:
       private val baseUri: Uri = Env.getBaseUri(config.env)
 
@@ -109,6 +111,19 @@ object DwollaApi:
               )
             )
         }
-  }
 
-
+      override def createFundingSourceForCustomer(id: UUID, fs: CreateFundingSourceRequest): F[Either[Throwable, Status]] =
+        getAuthToken.flatMap { token =>
+          httpBroker
+            .requestAndGetStatus(
+              Request[F](
+                Method.POST,
+                baseUri / "customers" / id / "funding-sources",
+                headers = Headers(
+                  Header.Raw(ci"Accept", "application/vnd.dwolla.v1.hal+json"),
+                  `Content-Type`(MediaType.application.`json`),
+                  Authorization(Credentials.Token(AuthScheme.Bearer, token))
+                )
+              ).withEntity(fs)
+            )
+        }

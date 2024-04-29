@@ -6,6 +6,8 @@ import cats.effect.syntax.resource.*
 import io.github.dhruvphumbra.dwollaapiclient.{ArgumentParser, Config, DwollaApi, HttpBroker}
 import io.github.dhruvphumbra.dwollaapiclient.models.{BusinessController, ControllerAddress, CreateCustomerRequest, ListAndSearchCustomersRequest}
 import io.chrisdavenport.mules.{MemoryCache, TimeSpec}
+import io.github.dhruvphumbra.dwollaapiclient.models.CreateFundingSourceRequest.FundingSourceRequest
+import io.github.dhruvphumbra.dwollaapiclient.models.FundingSourceType.Checking
 import org.http4s.QueryParamEncoder
 import org.http4s.ember.client.EmberClientBuilder
 
@@ -26,8 +28,8 @@ object Main extends IOApp:
         httpBrokerAlg = HttpBroker.impl[F](client)
         dwollaApiAlg = DwollaApi.impl[F](httpBrokerAlg)(config, c)
 
-        token <- (1 to 10).toList.map(_ => dwollaApiAlg.getAuthToken).sequence.toResource
-        _ = println(s"token is $token")
+//        token <- (1 to 10).toList.map(_ => dwollaApiAlg.getAuthToken).sequence.toResource
+//        _ = println(s"token is $token")
 
         //
         //      ucr <- dwollaApiAlg.createCustomer(CreateCustomerRequest.CreateReceiveOnlyCustomerRequest("first", "last", "fake5@email.com")).toResource
@@ -64,14 +66,16 @@ object Main extends IOApp:
         //      ).toResource
         //      _ = println(s"LLC creation response status is $llc")
 
-        get <- dwollaApiAlg.getCustomer(UUID.fromString("1e47f98b-8f58-4df6-86fb-80604f071b0f")).toResource
-        _ = println(s"get customer response is $get")
+//        get <- dwollaApiAlg.getCustomer(UUID.fromString("1e47f98b-8f58-4df6-86fb-80604f071b0f")).toResource
+//        _ = println(s"get customer response is $get")
 
-        get2 <- dwollaApiAlg.getCustomer(UUID.fromString("1e47f98b-8f58-4df6-86fb-80604f071b0f")).toResource
-        _ = println(s"get customer response is $get2")
-
-        get3 <- dwollaApiAlg.getCustomer(UUID.fromString("1e47f98b-8f58-4df6-86fb-80604f071b0f")).toResource
-        _ = println(s"get customer response is $get3")
+        fs <- dwollaApiAlg.createFundingSourceForCustomer(
+          UUID.fromString("1e47f98b-8f58-4df6-86fb-80604f071b0f"),
+            FundingSourceRequest(
+              accountNumber = "68839835684", routingNumber = "071101307", `type` = Checking, name = "Test Bank"
+            )
+          ).toResource
+        _ = println(s"created funding source is $fs")
 //
 //        lando <- dwollaApiAlg.listAndSearchCustomers(ListAndSearchCustomersRequest(limit = Some(1), offset = Some(5))).toResource
 //        _ = println(s"get customer list response is $lando")
