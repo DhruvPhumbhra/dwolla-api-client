@@ -1,9 +1,8 @@
 package io.github.dhruvphumbra.dwollaapiclient
 
-import org.http4s.Uri
+import io.github.dhruvphumbra.dwollaapiclient.models.Env
 
 import scala.annotation.tailrec
-import io.github.dhruvphumbra.dwollaapiclient.models.Env
 
 case class Config(env: Env, clientId: String, clientSecret: String)
 

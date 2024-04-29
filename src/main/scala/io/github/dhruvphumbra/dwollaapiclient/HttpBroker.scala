@@ -1,15 +1,8 @@
 package io.github.dhruvphumbra.dwollaapiclient
 
 import cats.data.*
-import cats.{Applicative, Monad}
 import cats.effect.Concurrent
-import cats.effect.kernel.Async
 import cats.syntax.all.*
-import io.circe.Decoder
-
-import scala.deriving.Mirror
-//import io.circe.generic.semiauto.deriveDecoder
-import org.http4s.circe.jsonOf
 import org.http4s.client.Client
 import org.http4s.{EntityDecoder, Headers, Method, Request, Response, Status, Uri}
 

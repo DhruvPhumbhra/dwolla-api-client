@@ -2,20 +2,17 @@ package io.github.dhruvphumbra.dwollaapiclient
 
 import cats.effect.Concurrent
 import cats.syntax.all.*
-import io.chrisdavenport.mules.{Cache, MemoryCache}
-import io.circe.Decoder
-import io.circe.literal.json
+import io.chrisdavenport.mules.Cache
 import io.circe.Json
-import io.github.dhruvphumbra.dwollaapiclient.models.*
 import io.github.dhruvphumbra.dwollaapiclient.HttpBroker.HttpException
+import io.github.dhruvphumbra.dwollaapiclient.models.*
 import org.http4s.circe.*
-import org.http4s.headers.{Accept, Authorization, `Content-Type`}
-import org.http4s.{Headers, *}
 import org.http4s.dsl.io.*
+import org.http4s.headers.{Authorization, `Content-Type`}
+import org.http4s.{Headers, *}
 import org.typelevel.ci.CIStringSyntax
 
 import java.util.UUID
-import scala.concurrent.duration.*
 
 trait DwollaApi[F[_]]:
   def getAuthToken: F[String]
@@ -48,7 +45,7 @@ object DwollaApi:
               baseUri / "token",
               headers = Headers(
                 `Content-Type`(MediaType.application.`x-www-form-urlencoded`),
-                Authorization(BasicCredentials(config.clientId, config.clientSecret))
+                Authorization(BasicCredentials(config.clientId, config.clientSecret)),
               )
             ).withEntity(UrlForm("grant_type" -> "client_credentials"))
           )
