@@ -1,7 +1,6 @@
 package io.github.dhruvphumbra.dwollaapiclient
 
 import cats.effect.Concurrent
-import cats.effect.std.AtomicCell
 import cats.syntax.all.*
 import io.circe.Decoder
 import org.http4s.circe.*
@@ -12,7 +11,7 @@ import io.circe.literal.json
 import io.circe.Json
 import io.github.dhruvphumbra.dwollaapiclient.models.*
 import org.typelevel.ci.CIStringSyntax
-import io.chrisdavenport.mules.Cache
+import io.chrisdavenport.mules.{Cache, MemoryCache}
 import io.github.dhruvphumbra.dwollaapiclient.HttpBroker.HttpException
 
 import java.util.UUID
@@ -20,42 +19,40 @@ import scala.concurrent.duration.*
 
 trait DwollaApi[F[_]]:
   def getAuthToken: F[String]
+
   def createCustomer(customer: CreateCustomerRequest): F[Either[Throwable, Status]]
+
   def getCustomer(id: UUID): F[Json]
+
   def listAndSearchCustomers(req: ListAndSearchCustomersRequest): F[Json]
 
 object DwollaApi:
   def apply[F[_]](implicit ev: DwollaApi[F]): DwollaApi[F] = ev
 
-  def impl[F[_]: Concurrent](httpBroker: HttpBroker[F])(config: Config): F[DwollaApi[F]] = AtomicCell[F].empty[String].map { authTokenCell =>
+  def impl[F[_] : Concurrent](httpBroker: HttpBroker[F])(config: Config, cache: Cache[F, String, String]): DwollaApi[F] = {
     new DwollaApi[F]:
       private val baseUri: Uri = Env.getBaseUri(config.env)
 
       override def getAuthToken: F[String] =
-        authTokenCell
-          .get
-          .flatMap(s => if (s.isEmpty) refreshAccessToken else s.pure[F])
+        cache
+          .lookup("token")
+          .flatMap { t =>
+            t.fold(refreshAccessToken.flatMap(token => cache.insert("token", token).as(token)))(_.pure[F])
+          }
 
       private def refreshAccessToken: F[String] =
-        authTokenCell.evalUpdateAndGet { _ =>
-          httpBroker
-            .makeRequest[AuthToken](
-              Request[F](
-                Method.POST,
-                baseUri / "token",
-                headers = Headers(
-                  `Content-Type`(MediaType.application.`x-www-form-urlencoded`),
-                  Authorization(BasicCredentials(config.clientId, config.clientSecret))
-                )
-              ).withEntity(UrlForm("grant_type" -> "client_credentials"))
-            )
-            .map(_.access_token)
-            .recoverWith {
-              case HttpException(_, _, _, Status.Unauthorized, _, _) =>
-                refreshAccessToken.flatMap(_ => refreshAccessToken)
-            }
-        }
-
+        httpBroker
+          .makeRequest[AuthToken](
+            Request[F](
+              Method.POST,
+              baseUri / "token",
+              headers = Headers(
+                `Content-Type`(MediaType.application.`x-www-form-urlencoded`),
+                Authorization(BasicCredentials(config.clientId, config.clientSecret))
+              )
+            ).withEntity(UrlForm("grant_type" -> "client_credentials"))
+          )
+          .map(_.access_token)
 
       override def createCustomer(customer: CreateCustomerRequest): F[Either[Throwable, Status]] =
         getAuthToken.flatMap { token =>
