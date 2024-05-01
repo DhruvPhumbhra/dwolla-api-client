@@ -4,10 +4,11 @@ import cats.effect.{Async, Concurrent, ExitCode, IO, IOApp, Temporal}
 import cats.syntax.all.*
 import cats.effect.syntax.resource.*
 import io.github.dhruvphumbra.dwollaapiclient.{ArgumentParser, Config, DwollaApi, HttpBroker}
-import io.github.dhruvphumbra.dwollaapiclient.models.{BusinessController, ControllerAddress, CreateCustomerRequest, ListAndSearchCustomersRequest}
+import io.github.dhruvphumbra.dwollaapiclient.models.{AchDetails, Addenda, Amount, BusinessController, Clearing, ClearingOptions, ControllerAddress, CreateCustomerRequest, Link, ListAndSearchCustomersRequest, UpdateFundingSourceRequest}
 import io.chrisdavenport.mules.{MemoryCache, TimeSpec}
-import io.github.dhruvphumbra.dwollaapiclient.models.CreateFundingSourceRequest.FundingSourceRequest
+import io.github.dhruvphumbra.dwollaapiclient.models.FundingSourceRequest.CreateFundingSourceRequest
 import io.github.dhruvphumbra.dwollaapiclient.models.FundingSourceType.Checking
+import io.github.dhruvphumbra.dwollaapiclient.models.TransferRequest.AchTransferRequest
 import org.http4s.QueryParamEncoder
 import org.http4s.ember.client.EmberClientBuilder
 
@@ -77,8 +78,31 @@ object Main extends IOApp:
 //          ).toResource
 //        _ = println(s"created funding source is $fs")
 
-        listFs <- dwollaApiAlg.listFundingSourceForCustomer(UUID.fromString("1e47f98b-8f58-4df6-86fb-80604f071b0f")).toResource
-        _ = println(s"list funding source is $listFs")
+//        getFs <- dwollaApiAlg.getFundingSource(UUID.fromString("c899b4a8-0026-4df5-81c5-ab952a2e285c")).toResource
+//        _ = println(s"get funding source is $getFs")
+//
+//        updateFs <- dwollaApiAlg.updateFundingSource(UUID.fromString("c899b4a8-0026-4df5-81c5-ab952a2e285c"), UpdateFundingSourceRequest(name = Some("New Bank"))).toResource
+//        _ = println(s"update funding source is $updateFs")
+
+        createTx <- dwollaApiAlg.createTransfer(
+          AchTransferRequest(
+            _links = Map(
+              "source" -> Link("https://api-devint.dwolla.com/funding-sources/some-id"),
+              "destination" -> Link("https://api-devint.dwolla.com/funding-sources/some-id")
+            ),
+            amount = Amount(currency = "USD", value = "1.00"),
+            metadata = Some(Map("metadata" -> "test metadata")),
+            fees = None,
+            clearing = Some(Clearing(source = Some(ClearingOptions.Standard), destination = Some(ClearingOptions.NextAvailable))),
+            achDetails = Some(AchDetails(source = Some(Map("addenda" -> Addenda(List("source addenda")))), destination = Some(Map("addenda" -> Addenda(List("destination addenda")))))),
+            correlationId = Some("some-correlation-id")
+          ),
+          Some("some-ik")
+        ).toResource
+        _ = println(s"created tx is $createTx")
+
+//        listFs <- dwollaApiAlg.listFundingSourceForCustomer(UUID.fromString("1e47f98b-8f58-4df6-86fb-80604f071b0f")).toResource
+//        _ = println(s"list funding source is $listFs")
 //
 //        lando <- dwollaApiAlg.listAndSearchCustomers(ListAndSearchCustomersRequest(limit = Some(1), offset = Some(5))).toResource
 //        _ = println(s"get customer list response is $lando")

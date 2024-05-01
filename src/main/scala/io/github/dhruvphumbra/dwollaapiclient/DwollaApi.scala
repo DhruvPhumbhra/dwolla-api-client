@@ -19,9 +19,11 @@ trait DwollaApi[F[_]]:
   def createCustomer(customer: CreateCustomerRequest): F[Either[Throwable, Status]]
   def getCustomer(id: UUID): F[Json]
   def listAndSearchCustomers(req: ListAndSearchCustomersRequest): F[Json]
-  def createFundingSourceForCustomer(id: UUID, req: CreateFundingSourceRequest): F[Either[Throwable, Status]]
+  def createFundingSourceForCustomer(id: UUID, req: FundingSourceRequest): F[Either[Throwable, Status]]
   def getFundingSource(id: UUID): F[Json]
   def listFundingSourceForCustomer(id: UUID, removed: Option[Boolean] = None): F[Json]
+  def updateFundingSource(id: UUID, req: UpdateFundingSourceRequest): F[Json]
+  def createTransfer(req: TransferRequest, ik: Option[String]): F[Either[Throwable, Status]]
 
 object DwollaApi:
   def apply[F[_]](implicit ev: DwollaApi[F]): DwollaApi[F] = ev
@@ -107,7 +109,7 @@ object DwollaApi:
             )
         }
 
-      override def createFundingSourceForCustomer(id: UUID, fs: CreateFundingSourceRequest): F[Either[Throwable, Status]] =
+      override def createFundingSourceForCustomer(id: UUID, fs: FundingSourceRequest): F[Either[Throwable, Status]] =
         getAuthToken.flatMap { token =>
           httpBroker
             .requestAndGetStatus(
@@ -153,5 +155,38 @@ object DwollaApi:
                   Authorization(Credentials.Token(AuthScheme.Bearer, token))
                 )
               )
+            )
+        }
+
+      override def updateFundingSource(id: UUID, req: UpdateFundingSourceRequest): F[Json] =
+        getAuthToken.flatMap { token =>
+          httpBroker
+            .makeRequest(
+              Request[F](
+                Method.POST,
+                baseUri / "funding-sources" / id,
+                headers = Headers(
+                  Header.Raw(ci"Accept", "application/vnd.dwolla.v1.hal+json"),
+                  `Content-Type`(MediaType.application.`json`),
+                  Authorization(Credentials.Token(AuthScheme.Bearer, token))
+                )
+              ).withEntity(req)
+            )
+        }
+
+      override def createTransfer(req: TransferRequest, ik: Option[String]): F[Either[Throwable, Status]] =
+        getAuthToken.flatMap { token =>
+          httpBroker
+            .requestAndGetStatus(
+              Request[F](
+                Method.POST,
+                baseUri / "transfers",
+                headers = Headers(
+                  Header.Raw(ci"Accept", "application/vnd.dwolla.v1.hal+json"),
+                  `Content-Type`(MediaType.application.`json`),
+                  Authorization(Credentials.Token(AuthScheme.Bearer, token)),
+                  ik.map(Header.Raw(ci"Idempotency-Key", _))
+                )
+              ).withEntity(req)
             )
         }

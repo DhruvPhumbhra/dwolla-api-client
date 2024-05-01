@@ -12,7 +12,7 @@ object CreateCustomerRequest:
   given Encoder[CreateCustomerRequest] =
     ConfiguredEncoder
       .derive[CreateCustomerRequest](discriminator = Some("__requestType"))
-      .mapJson(j => j.deepDropNullValues.mapObject(_.remove("__requestType")))
+      .mapJson(_.deepDropNullValues.mapObject(_.remove("__requestType")))
   given[F[_] : Concurrent]: EntityDecoder[F, CreateCustomerRequest] = jsonOf
 
   given[F[_] : Concurrent]: EntityEncoder[F, CreateCustomerRequest] = jsonEncoderOf

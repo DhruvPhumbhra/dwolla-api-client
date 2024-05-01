@@ -2,15 +2,15 @@ package io.github.dhruvphumbra
 
 import io.circe.{Codec, Decoder, Encoder}
 
-import scala.compiletime.summonAll
+import scala.compiletime.{constValue, summonAll}
 import scala.deriving.Mirror
 
 package object dwollaapiclient:
-  inline def stringEnumCodec[T](using m: Mirror.SumOf[T]): Codec[T] =
+  inline def stringEnumCodec[T](transformNames: String => String)(using m: Mirror.SumOf[T]): Codec[T] =
     val elems = summonAll[Tuple.Map[m.MirroredElemTypes, ValueOf]]
       .productIterator.asInstanceOf[Iterator[ValueOf[T]]].map(_.value)
     val names = summonAll[Tuple.Map[m.MirroredElemLabels, ValueOf]]
-      .productIterator.asInstanceOf[Iterator[ValueOf[String]]].map(_.value.toLowerCase)
+      .productIterator.asInstanceOf[Iterator[ValueOf[String]]].map(s => transformNames(s.value))
     val encoderMap = (elems zip names).toMap
     val decoderMap = (names zip elems).toMap
 
@@ -20,3 +20,8 @@ package object dwollaapiclient:
       },
       Encoder[String].contramap[T](encoderMap.apply)
     )
+
+//  def coproductConfiguredEncoder[A <: reflect.Enum : Mirror.SumOf : Mirror.ProductOf]: Encoder[A] =
+//    ConfiguredEncoder
+//      .derive[A](discriminator = Some("__requestType"))(implicitly[Mirror.Of[A]])
+//      .mapJson(_.deepDropNullValues.mapObject(_.remove("__requestType")))
