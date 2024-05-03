@@ -87,14 +87,14 @@ object Main extends IOApp:
         createTx <- dwollaApiAlg.createTransfer(
           AchTransferRequest(
             _links = Map(
-              "source" -> Link("https://api-devint.dwolla.com/funding-sources/some-id"),
-              "destination" -> Link("https://api-devint.dwolla.com/funding-sources/some-id")
+              "source" -> Link("https://api-devint.dwolla.com/funding-sources/97b77540-2aee-41ee-8196-97536911d9ab"),
+              "destination" -> Link("https://api-devint.dwolla.com/funding-sources/31c555b3-aa03-4577-919e-3377d406094a")
             ),
             amount = Amount(currency = "USD", value = "1.00"),
             metadata = Some(Map("metadata" -> "test metadata")),
             fees = None,
             clearing = Some(Clearing(source = Some(ClearingOptions.Standard), destination = Some(ClearingOptions.NextAvailable))),
-            achDetails = Some(AchDetails(source = Some(Map("addenda" -> Addenda(List("source addenda")))), destination = Some(Map("addenda" -> Addenda(List("destination addenda")))))),
+            achDetails = None, //Some(AchDetails(source = Some(Map("addenda" -> Addenda(List("source addenda")))), destination = Some(Map("addenda" -> Addenda(List("destination addenda")))))),
             correlationId = Some("some-correlation-id")
           ),
           Some("some-ik")

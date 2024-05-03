@@ -16,14 +16,14 @@ import java.util.UUID
 
 trait DwollaApi[F[_]]:
   def getAuthToken: F[String]
-  def createCustomer(customer: CreateCustomerRequest): F[Either[Throwable, Status]]
+  def createCustomer(customer: CreateCustomerRequest): F[Either[Throwable, UUID]]
   def getCustomer(id: UUID): F[Json]
   def listAndSearchCustomers(req: ListAndSearchCustomersRequest): F[Json]
-  def createFundingSourceForCustomer(id: UUID, req: FundingSourceRequest): F[Either[Throwable, Status]]
+  def createFundingSourceForCustomer(id: UUID, req: FundingSourceRequest): F[Either[Throwable, UUID]]
   def getFundingSource(id: UUID): F[Json]
   def listFundingSourceForCustomer(id: UUID, removed: Option[Boolean] = None): F[Json]
   def updateFundingSource(id: UUID, req: UpdateFundingSourceRequest): F[Json]
-  def createTransfer(req: TransferRequest, ik: Option[String]): F[Either[Throwable, Status]]
+  def createTransfer(req: TransferRequest, ik: Option[String]): F[Either[Throwable, UUID]]
 
 object DwollaApi:
   def apply[F[_]](implicit ev: DwollaApi[F]): DwollaApi[F] = ev
@@ -53,10 +53,10 @@ object DwollaApi:
           )
           .map(_.access_token)
 
-      override def createCustomer(customer: CreateCustomerRequest): F[Either[Throwable, Status]] =
+      override def createCustomer(customer: CreateCustomerRequest): F[Either[Throwable, UUID]] =
         getAuthToken.flatMap { token =>
           httpBroker
-            .requestAndGetStatus(
+            .requestAndGetResourceId(
               Request[F](
                 Method.POST,
                 baseUri / "customers",
@@ -109,10 +109,10 @@ object DwollaApi:
             )
         }
 
-      override def createFundingSourceForCustomer(id: UUID, fs: FundingSourceRequest): F[Either[Throwable, Status]] =
+      override def createFundingSourceForCustomer(id: UUID, fs: FundingSourceRequest): F[Either[Throwable, UUID]] =
         getAuthToken.flatMap { token =>
           httpBroker
-            .requestAndGetStatus(
+            .requestAndGetResourceId(
               Request[F](
                 Method.POST,
                 baseUri / "customers" / id / "funding-sources",
@@ -174,10 +174,10 @@ object DwollaApi:
             )
         }
 
-      override def createTransfer(req: TransferRequest, ik: Option[String]): F[Either[Throwable, Status]] =
+      override def createTransfer(req: TransferRequest, ik: Option[String]): F[Either[Throwable, UUID]] =
         getAuthToken.flatMap { token =>
           httpBroker
-            .requestAndGetStatus(
+            .requestAndGetResourceId(
               Request[F](
                 Method.POST,
                 baseUri / "transfers",
