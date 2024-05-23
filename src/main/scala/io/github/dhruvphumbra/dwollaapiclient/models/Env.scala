@@ -21,3 +21,6 @@ object Env:
     case Env.Devint => Uri.unsafeFromString("https://api-devint.dwolla.com")
     case Env.Sandbox => Uri.unsafeFromString("https://api-sandbox.dwolla.com")
     case Env.Production => Uri.unsafeFromString("https://api.dwolla.com")
+
+  def getBaseUri(s: String): Uri = getBaseUri(Env(s))
+    

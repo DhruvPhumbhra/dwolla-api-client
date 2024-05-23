@@ -1,10 +1,11 @@
 package io.github.dhruvphumbra.dwollaapiclient
 
 import io.github.dhruvphumbra.dwollaapiclient.models.Env
+import org.http4s.Uri
 
 import scala.annotation.tailrec
 
-case class Config(env: Env, clientId: String, clientSecret: String)
+case class Config(baseUri: Uri, clientId: String, clientSecret: String)
 
 trait ArgumentParser:
   def parse(args: List[String]): Config
@@ -28,5 +29,5 @@ object ArgumentParser:
     }
 
     private def toConfig(options: Map[String, String]): Config = {
-      Config(Env(options.getOrElse("env", "local")), options("clientId"), options("clientSecret"))
+      Config(Env.getBaseUri(options.getOrElse("env", "local")), options("clientId"), options("clientSecret"))
     }

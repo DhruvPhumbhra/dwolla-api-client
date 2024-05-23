@@ -4,13 +4,15 @@ import cats.data.*
 import cats.effect.Concurrent
 import cats.syntax.all.*
 import org.http4s.client.Client
-import org.http4s.{EntityDecoder, Headers, Method, Request, Response, Status, Uri}
+import org.http4s.headers.{Authorization, `Content-Type`}
+import org.http4s.{AuthScheme, Credentials, EntityDecoder, Header, Headers, MediaType, Method, Request, Response, Status, Uri}
 import org.typelevel.ci.CIStringSyntax
 
 import java.util.UUID
 
 trait HttpBroker[F[_]]:
   def makeRequest[T](req: Request[F])(implicit decoder: EntityDecoder[F, T]): F[T]
+  def getResourceByUri[T](token: String, uri: Uri)(implicit decoder: EntityDecoder[F, T]): F[T]
   def requestAndGetStatus(req: Request[F]): F[Either[Throwable, Status]]
   def requestAndGetResourceId(req: Request[F]): F[Either[Throwable, UUID]]
 
@@ -33,6 +35,20 @@ object HttpBroker:
 
     override def makeRequest[T](req: Request[F])(implicit decoder: EntityDecoder[F, T]): F[T] =
       C.expectOr[T](req)(toHttpException(req, _))
+
+    override def getResourceByUri[T](token: String, uri: Uri)(implicit decoder: EntityDecoder[F, T]): F[T] = {
+      makeRequest(
+        Request[F](
+          Method.GET,
+          uri,
+          headers = Headers(
+            Header.Raw(ci"Accept", "application/vnd.dwolla.v1.hal+json"),
+            `Content-Type`(MediaType.application.`json`),
+            Authorization(Credentials.Token(AuthScheme.Bearer, token))
+          )
+        )
+      )
+    }
 
     override def requestAndGetStatus(req: Request[F]): F[Either[Throwable, Status]] =
       C.run(req).use { res =>
