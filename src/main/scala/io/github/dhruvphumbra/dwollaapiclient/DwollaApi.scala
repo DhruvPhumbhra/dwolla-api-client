@@ -24,6 +24,7 @@ trait DwollaApi[F[_]]:
   def listFundingSourceForCustomer(id: UUID, removed: Option[Boolean] = None): F[Json]
   def updateFundingSource(id: UUID, req: UpdateFundingSourceRequest): F[Json]
   def createTransfer(req: TransferRequest, ik: Option[String]): F[Either[Throwable, UUID]]
+  def getTransfer(id: UUID): F[Json]
 
 object DwollaApi:
   def apply[F[_]](implicit ev: DwollaApi[F]): DwollaApi[F] = ev
@@ -188,5 +189,21 @@ object DwollaApi:
                   ik.map(Header.Raw(ci"Idempotency-Key", _))
                 )
               ).withEntity(req)
+            )
+        }
+
+      override def getTransfer(id: UUID): F[Json] =
+        getAuthToken.flatMap { token =>
+          httpBroker
+            .makeRequest[Json](
+              Request[F](
+                Method.GET,
+                baseUri / "transfers" / id,
+                headers = Headers(
+                  Header.Raw(ci"Accept", "application/vnd.dwolla.v1.hal+json"),
+                  `Content-Type`(MediaType.application.`json`),
+                  Authorization(Credentials.Token(AuthScheme.Bearer, token))
+                )
+              )
             )
         }

@@ -21,7 +21,7 @@ package object dwollaapiclient:
       Encoder[String].contramap[T](encoderMap.apply)
     )
 
-//  def coproductConfiguredEncoder[A <: reflect.Enum : Mirror.SumOf : Mirror.ProductOf]: Encoder[A] =
+//  def coproductConfiguredEncoder[A <: reflect.Enum : Mirror.SumOf]: Encoder[A] =
 //    ConfiguredEncoder
-//      .derive[A](discriminator = Some("__requestType"))(implicitly[Mirror.Of[A]])
+//      .derive[A](discriminator = Some("__requestType"))
 //      .mapJson(_.deepDropNullValues.mapObject(_.remove("__requestType")))

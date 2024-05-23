@@ -29,7 +29,7 @@ object HttpBroker:
     override def getMessage: String = s"uri: $uri \n method: $method \n status: $status \n headers: $headers \n body: $body \n reqBody: $reqBody"
   }
 
-  def impl[F[_]: Concurrent](C: Client[F]) = new HttpBroker[F]:
+  def impl[F[_]: Concurrent](C: Client[F]): HttpBroker[F] = new HttpBroker[F]:
 
     override def makeRequest[T](req: Request[F])(implicit decoder: EntityDecoder[F, T]): F[T] =
       C.expectOr[T](req)(toHttpException(req, _))
