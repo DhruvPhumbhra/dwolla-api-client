@@ -9,8 +9,9 @@ import io.chrisdavenport.mules.{MemoryCache, TimeSpec}
 import io.github.dhruvphumbra.dwollaapiclient.models.FundingSourceRequest.CreateFundingSourceRequest
 import io.github.dhruvphumbra.dwollaapiclient.models.FundingSourceType.Checking
 import io.github.dhruvphumbra.dwollaapiclient.models.TransferRequest.AchTransferRequest
-import org.http4s.QueryParamEncoder
+import org.http4s.{QueryParamEncoder, Uri}
 import org.http4s.ember.client.EmberClientBuilder
+import org.http4s.implicits.uri
 
 import java.util.UUID
 import scala.concurrent.duration.DurationInt
@@ -87,8 +88,8 @@ object Main extends IOApp:
         createTx <- dwollaApiAlg.createTransfer(
           AchTransferRequest(
             _links = Map(
-              "source" -> Link("https://api-devint.dwolla.com/funding-sources/97b77540-2aee-41ee-8196-97536911d9ab"),
-              "destination" -> Link("https://api-devint.dwolla.com/funding-sources/31c555b3-aa03-4577-919e-3377d406094a")
+              "source" -> Link(uri"https://api-devint.dwolla.com/funding-sources/97b77540-2aee-41ee-8196-97536911d9ab"),
+              "destination" -> Link(uri"https://api-devint.dwolla.com/funding-sources/31c555b3-aa03-4577-919e-3377d406094a")
             ),
             amount = Amount(currency = "USD", value = "1.00"),
             metadata = Some(Map("metadata" -> "test metadata")),

@@ -4,8 +4,8 @@ import cats.effect.kernel.Concurrent
 import io.circe.derivation.{ConfiguredEncoder, renaming}
 import io.circe.{Codec, Decoder, Encoder}
 import io.github.dhruvphumbra.dwollaapiclient.stringEnumCodec
-import org.http4s.EntityEncoder
-import org.http4s.circe.jsonEncoderOf
+import org.http4s.{EntityEncoder, Uri}
+import org.http4s.circe.{jsonEncoderOf, decodeUri, encodeUri}
 
 object TransferRequest:
   given Encoder[TransferRequest] =
@@ -29,7 +29,7 @@ enum TransferRequest:
 
   case RtpTransferRequest(foo: String) //TODO: implement
 
-case class Link(href: String) derives Decoder, Encoder.AsObject // TODO: Convert to Uri for better type safety
+case class Link(href: Uri) derives Decoder, Encoder.AsObject
 
 case class Fee(_links: Map[String, String], amount: Amount) derives Decoder, Encoder.AsObject
 
