@@ -1,7 +1,7 @@
 package io.github.dhruvphumbra.dwollaapiclient.models
 
 import cats.effect.Concurrent
-import io.circe.derivation.ConfiguredEncoder
+import io.circe.derivation.{ConfiguredEncoder, renaming}
 import io.circe.{Codec, Decoder, Encoder}
 import io.github.dhruvphumbra.dwollaapiclient.stringEnumCodec
 import org.http4s.EntityEncoder
@@ -34,7 +34,7 @@ enum FundingSourceRequest:
                                  )
 
 object FundingSourceType:
-  given Codec[FundingSourceType] = stringEnumCodec[FundingSourceType](_.toLowerCase)
+  given Codec[FundingSourceType] = stringEnumCodec[FundingSourceType](renaming.kebabCase)
 
 enum FundingSourceType:
   case Checking

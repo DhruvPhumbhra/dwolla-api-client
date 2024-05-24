@@ -3,8 +3,9 @@ package io.github.dhruvphumbra.dwollaapiclient.examples
 import cats.effect.{Async, Concurrent, ExitCode, IO, IOApp, Temporal}
 import cats.syntax.all.*
 import cats.effect.syntax.resource.*
-import io.github.dhruvphumbra.dwollaapiclient.{ArgumentParser, Config, DwollaApi, HttpBroker}
-import io.github.dhruvphumbra.dwollaapiclient.models.{AchDetails, Addenda, Amount, BusinessController, Clearing, ClearingOptions, ControllerAddress, CreateCustomerRequest, Link, ListAndSearchCustomersRequest, UpdateFundingSourceRequest}
+import io.circe.syntax.*
+import io.github.dhruvphumbra.dwollaapiclient.*
+import io.github.dhruvphumbra.dwollaapiclient.models.*
 import io.chrisdavenport.mules.{MemoryCache, TimeSpec}
 import io.github.dhruvphumbra.dwollaapiclient.models.FundingSourceRequest.CreateFundingSourceRequest
 import io.github.dhruvphumbra.dwollaapiclient.models.FundingSourceType.Checking
@@ -23,16 +24,27 @@ object Main extends IOApp:
   def runImpl[F[_] : Async](config: Config): F[ExitCode] = {
     for {
         client <- EmberClientBuilder.default[F].build
-        c <- MemoryCache.ofSingleImmutableMap[F, String, String](TimeSpec.fromDuration(59.minutes)).toResource
-        httpBrokerAlg = HttpBroker.impl[F](client)
-        dwollaApiAlg = DwollaApi.impl[F](httpBrokerAlg)(config, c)
+        cache <- MemoryCache.ofSingleImmutableMap[F, String, AuthToken](TimeSpec.fromDuration(59.minutes)).toResource
+        dwollaAuthorizer = DwollaAuthorizer.impl[F](client, config.baseUri)(cache)
+        dwollaAuthMiddleware = DwollaAuthMiddleware[F](dwollaAuthorizer, config.clientId, config.clientSecret, client)
+        httpBrokerAlg = HttpBroker.impl[F](dwollaAuthMiddleware)
+        dwollaApiAlg = DwollaApi.impl[F](httpBrokerAlg, config.baseUri)
+
+        accountDetails <- dwollaApiAlg.getAccountDetails(UUID.fromString("a066fff3-93ce-48e1-a496-b3b0e9e89b7d")).toResource
+        _ = println(s"account details are $accountDetails")
+
+//        badAccount <- dwollaApiAlg.getAccountDetails(UUID.fromString("87e2cc08-e317-4ee2-807c-0101b8ae9a81")).toResource
+//        _ = println(s"bad account details are $badAccount")
+
+//        badFs <- dwollaApiAlg.listFundingSourcesForAccount(UUID.fromString("87e2cc08-e317-4ee2-807c-0101b8ae9a81"), None).toResource
+//        _ = println(s"bad fs details are $badFs")
 
 //        token <- (1 to 10).toList.map(_ => dwollaApiAlg.getAuthToken).sequence.toResource
 //        _ = println(s"token is $token")
 
-        //
-        //      ucr <- dwollaApiAlg.createCustomer(CreateCustomerRequest.CreateReceiveOnlyCustomerRequest("first", "last", "fake5@email.com")).toResource
-        //      _ = println(s"UCR creation response is $ucr")
+
+//        ucr <- dwollaApiAlg.createCustomer(CreateCustomerRequest.CreateReceiveOnlyCustomerRequest("first", "last", "fake7@email.com")).toResource
+//        _ = println(s"UCR creation response is $ucr")
         //
         //      ro <- dwollaApiAlg.createCustomer(CreateCustomerRequest.CreateReceiveOnlyCustomerRequest("first", "last", "fake6@email.com", Some("biz name"))).toResource
         //      _ = println(s"RO creation response status is $ro")
@@ -70,36 +82,39 @@ object Main extends IOApp:
 
 //        fs <- dwollaApiAlg.createFundingSourceForCustomer(
 //          UUID.fromString("1e47f98b-8f58-4df6-86fb-80604f071b0f"),
-//            FundingSourceRequest(
-//              accountNumber = "68839835684", routingNumber = "071101307", `type` = Checking, name = "Test Bank"
+//            CreateFundingSourceRequest(
+//              accountNumber = "68839835664", routingNumber = "071101307", `type` = Checking, name = "Test Bank"
 //            )
 //          ).toResource
 //        _ = println(s"created funding source is $fs")
 
 //        getFs <- dwollaApiAlg.getFundingSource(UUID.fromString("c899b4a8-0026-4df5-81c5-ab952a2e285c")).toResource
 //        _ = println(s"get funding source is $getFs")
+//          x = UpdateFundingSourceRequest(name = Some("Newer Bank")).asJson
+//          _ = println(x)
 //
-//        updateFs <- dwollaApiAlg.updateFundingSource(UUID.fromString("c899b4a8-0026-4df5-81c5-ab952a2e285c"), UpdateFundingSourceRequest(name = Some("New Bank"))).toResource
-//        _ = println(s"update funding source is $updateFs")
+//
+        updateFs <- dwollaApiAlg.updateFundingSource(UUID.fromString("c899b4a8-0026-4df5-81c5-ab952a2e285c"), UpdateFundingSourceRequest(`type` = Some(FundingSourceType.Checking))).toResource
+        _ = println(s"update funding source is $updateFs")
 
-        createTx <- dwollaApiAlg.createTransfer(
-          AchTransferRequest(
-            _links = Map(
-              "source" -> Link(uri"https://api-devint.dwolla.com/funding-sources/97b77540-2aee-41ee-8196-97536911d9ab"),
-              "destination" -> Link(uri"https://api-devint.dwolla.com/funding-sources/31c555b3-aa03-4577-919e-3377d406094a")
-            ),
-            amount = Amount(currency = "USD", value = "1.00"),
-            metadata = Some(Map("metadata" -> "test metadata")),
-            fees = None,
-            clearing = Some(Clearing(source = Some(ClearingOptions.Standard), destination = Some(ClearingOptions.NextAvailable))),
-            achDetails = None, //Some(AchDetails(source = Some(Map("addenda" -> Addenda(List("source addenda")))), destination = Some(Map("addenda" -> Addenda(List("destination addenda")))))),
-            correlationId = Some("some-correlation-id")
-          ),
-          Some("some-ik")
-        ).toResource
-        _ = println(s"created tx is $createTx")
+//        createTx <- dwollaApiAlg.createTransfer(
+//          AchTransferRequest(
+//            _links = Map(
+//              "source" -> Link(uri"https://api-devint.dwolla.com/funding-sources/97b77540-2aee-41ee-8196-97536911d9ab"),
+//              "destination" -> Link(uri"https://api-devint.dwolla.com/funding-sources/31c555b3-aa03-4577-919e-3377d406094a")
+//            ),
+//            amount = Amount(currency = "USD", value = "1.00"),
+//            metadata = Some(Map("metadata" -> "test metadata")),
+//            fees = None,
+//            clearing = Some(Clearing(source = Some(ClearingOptions.Standard), destination = Some(ClearingOptions.NextAvailable))),
+//            achDetails = None, //Some(AchDetails(source = Some(Map("addenda" -> Addenda(List("source addenda")))), destination = Some(Map("addenda" -> Addenda(List("destination addenda")))))),
+//            correlationId = Some("some-correlation-id")
+//          ),
+//          Some("some-ik")
+//        ).toResource
+//        _ = println(s"created tx is $createTx")
 
-//        listFs <- dwollaApiAlg.listFundingSourceForCustomer(UUID.fromString("1e47f98b-8f58-4df6-86fb-80604f071b0f")).toResource
+//        listFs <- dwollaApiAlg.listFundingSourceForCustomer(UUID.fromString("1e47f98b-8f58-4df6-86fb-80604f071b0f"), None).toResource
 //        _ = println(s"list funding source is $listFs")
 //
 //        lando <- dwollaApiAlg.listAndSearchCustomers(ListAndSearchCustomersRequest(limit = Some(1), offset = Some(5))).toResource
