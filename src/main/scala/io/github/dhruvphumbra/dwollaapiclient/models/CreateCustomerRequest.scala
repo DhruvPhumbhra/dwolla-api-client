@@ -1,11 +1,10 @@
 package io.github.dhruvphumbra.dwollaapiclient.models
 
 import cats.effect.Concurrent
-import io.circe.derivation.{Configuration, ConfiguredEncoder, ConfiguredEnumCodec, ConfiguredEnumEncoder}
-import io.circe.literal.json
-import io.circe.{Decoder, Encoder, Json}
-import org.http4s.circe.*
+import io.circe.derivation.{Configuration, ConfiguredEncoder}
+import io.circe.{Decoder, Encoder}
 import org.http4s.*
+import org.http4s.circe.*
 
 object CreateCustomerRequest:
   // TODO: This is a hack. Revisit when [this issue](https://github.com/circe/circe/issues/1126) is addressed.

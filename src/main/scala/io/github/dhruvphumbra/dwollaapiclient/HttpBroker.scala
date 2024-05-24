@@ -10,13 +10,13 @@ import org.typelevel.ci.CIStringSyntax
 
 import java.util.UUID
 
-trait HttpBroker[F[_]]:
+private [dwollaapiclient] trait HttpBroker[F[_]]:
   def makeRequest[T](req: Request[F])(implicit decoder: EntityDecoder[F, T]): F[T]
   def getResourceByUri[T](token: String, uri: Uri)(implicit decoder: EntityDecoder[F, T]): F[T]
   def requestAndGetStatus(req: Request[F]): F[Either[Throwable, Status]]
   def requestAndGetResourceId(req: Request[F]): F[Either[Throwable, UUID]]
 
-object HttpBroker:
+private [dwollaapiclient] object HttpBroker:
   def apply[F[_]](implicit ev: HttpBroker[F]): HttpBroker[F] = ev
 
   final case class HttpException(

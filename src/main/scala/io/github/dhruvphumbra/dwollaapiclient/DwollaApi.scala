@@ -16,13 +16,13 @@ import java.util.UUID
 trait DwollaApi[F[_]]:
   def getAuthToken: F[String]
   def getAccountDetails(id: UUID): F[Json]
-  def listFundingSourcesForAccount(id: UUID, removed: Option[Boolean] = None): F[Json]
+  def listFundingSourcesForAccount(id: UUID, removed: Option[Boolean]): F[Json]
   def createCustomer(customer: CreateCustomerRequest): F[Either[Throwable, UUID]]
   def getCustomer(id: UUID): F[Json]
   def listAndSearchCustomers(req: ListAndSearchCustomersRequest): F[Json]
   def createFundingSourceForCustomer(id: UUID, req: FundingSourceRequest): F[Either[Throwable, UUID]]
   def getFundingSource(id: UUID): F[Json]
-  def listFundingSourceForCustomer(id: UUID, removed: Option[Boolean] = None): F[Json]
+  def listFundingSourceForCustomer(id: UUID, removed: Option[Boolean]): F[Json]
   def updateFundingSource(id: UUID, req: UpdateFundingSourceRequest): F[Json]
   def createTransfer(req: TransferRequest, ik: Option[String]): F[Either[Throwable, UUID]]
   def getTransfer(id: UUID): F[Json]
@@ -58,7 +58,7 @@ object DwollaApi:
       override def getAccountDetails(id: UUID): F[Json] =
         getAuthToken.flatMap(token => httpBroker.getResourceByUri[Json](token, baseUri / "accounts" / id))
 
-      override def listFundingSourcesForAccount(id: UUID, removed: Option[Boolean] = None): F[Json] =
+      override def listFundingSourcesForAccount(id: UUID, removed: Option[Boolean]): F[Json] =
         getAuthToken.flatMap { token =>
           httpBroker
             .makeRequest[Json](

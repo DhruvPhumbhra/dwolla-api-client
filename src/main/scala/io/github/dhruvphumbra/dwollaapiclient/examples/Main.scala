@@ -17,11 +17,8 @@ import java.util.UUID
 import scala.concurrent.duration.DurationInt
 
 object Main extends IOApp:
-  override def run(args: List[String]): IO[ExitCode] = {
-    val argumentParser = ArgumentParser.impl
-    val config = argumentParser.parse(args)
-    runImpl[IO](config)
-  }
+  override def run(args: List[String]): IO[ExitCode] =
+    runImpl[IO](ArgumentParser.impl.parse(args))
 
   def runImpl[F[_] : Async](config: Config): F[ExitCode] = {
     for {
