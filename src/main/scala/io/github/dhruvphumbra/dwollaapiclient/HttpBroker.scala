@@ -3,18 +3,17 @@ package io.github.dhruvphumbra.dwollaapiclient
 import cats.data.*
 import cats.effect.Concurrent
 import cats.syntax.all.*
+import org.http4s.Method.GET
 import org.http4s.client.Client
-import org.http4s.headers.{Authorization, `Content-Type`}
-import org.http4s.{AuthScheme, Credentials, EntityDecoder, Header, Headers, MediaType, Method, Request, Response, Status, Uri}
+import org.http4s.{EntityDecoder, EntityEncoder, Header, Headers, Method, Request, Response, Status, Uri}
 import org.typelevel.ci.CIStringSyntax
 
 import java.util.UUID
 
 private [dwollaapiclient] trait HttpBroker[F[_]]:
-  def makeRequest[T](req: Request[F])(implicit decoder: EntityDecoder[F, T]): F[T]
-  def getResourceByUri[T](token: String, uri: Uri)(implicit decoder: EntityDecoder[F, T]): F[T]
-  def requestAndGetStatus(req: Request[F]): F[Either[Throwable, Status]]
-  def requestAndGetResourceId(req: Request[F]): F[Either[Throwable, UUID]]
+  def get[T](uri: Uri)(implicit decoder: EntityDecoder[F, T]): F[T]
+  def createAndGetResourceId[T](uri: Uri, entity: T, hds: Header.Raw*)(implicit encoder: EntityEncoder[F, T]): F[Either[Throwable, UUID]]
+  def update[T, U](uri: Uri, entity: T)(implicit entityEncoder: EntityEncoder[F, T], entityDecoder: EntityDecoder[F, U]): F[U]
 
 private [dwollaapiclient] object HttpBroker:
   def apply[F[_]](implicit ev: HttpBroker[F]): HttpBroker[F] = ev
@@ -33,40 +32,25 @@ private [dwollaapiclient] object HttpBroker:
 
   def impl[F[_]: Concurrent](C: Client[F]): HttpBroker[F] = new HttpBroker[F]:
 
-    override def makeRequest[T](req: Request[F])(implicit decoder: EntityDecoder[F, T]): F[T] =
+    override def get[T](uri: Uri)(implicit decoder: EntityDecoder[F, T]): F[T] =
+      val req = Request[F](Method.GET, uri)
       C.expectOr[T](req)(toHttpException(req, _))
 
-    override def getResourceByUri[T](token: String, uri: Uri)(implicit decoder: EntityDecoder[F, T]): F[T] = {
-      makeRequest(
-        Request[F](
-          Method.GET,
-          uri,
-          headers = Headers(
-            Header.Raw(ci"Accept", "application/vnd.dwolla.v1.hal+json"),
-            `Content-Type`(MediaType.application.`json`),
-            Authorization(Credentials.Token(AuthScheme.Bearer, token))
-          )
-        )
-      )
-    }
-
-    override def requestAndGetStatus(req: Request[F]): F[Either[Throwable, Status]] =
-      C.run(req).use { res =>
-        if (res.status.isSuccess)
-          EitherT.rightT[F, Throwable](res.status).value
-        else
-          EitherT.left(toHttpException(req, res)).value
-      }
-
-    override def requestAndGetResourceId(req: Request[F]): F[Either[Throwable, UUID]] =
-      C.run(req).use { res =>
+    override def createAndGetResourceId[T](uri: Uri, entity: T, hds: Header.Raw*)(implicit encoder: EntityEncoder[F, T]): F[Either[Throwable, UUID]] =
+      val req = Request[F](Method.POST, uri).withEntity(entity)
+      C.run(req.withHeaders(hds)).use { res =>
         EitherT.fromOptionM(
           res.headers.headers
             .find(_.name == ci"Location")
             .map(h => UUID.fromString(h.value.split("/").last))
             .pure[F],
-          toHttpException(req, res)).value
+          toHttpException(req, res)
+        ).value
       }
+
+    override def update[T, U](uri: Uri, entity: T)(implicit entityEncoder: EntityEncoder[F, T], entityDecoder: EntityDecoder[F, U]): F[U] =
+      val req = Request[F](Method.GET, uri).withEntity(entity)
+      C.expectOr[U](req)(toHttpException(req, _))
 
     private def toHttpException(request: Request[F], response: Response[F]): F[Throwable] = {
       val body = response.body.through(fs2.text.utf8.decode).compile.string

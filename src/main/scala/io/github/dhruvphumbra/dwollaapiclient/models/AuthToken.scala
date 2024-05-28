@@ -1,11 +1,10 @@
 package io.github.dhruvphumbra.dwollaapiclient.models
 
 import cats.effect.Concurrent
+import io.circe.Decoder
 import io.circe.derivation.Configuration
-import io.circe.literal.json
-import io.circe.{Decoder, Encoder, Json}
-import org.http4s.circe.*
 import org.http4s.*
+import org.http4s.circe.*
 
 case class AuthToken(access_token: String) derives Decoder
 

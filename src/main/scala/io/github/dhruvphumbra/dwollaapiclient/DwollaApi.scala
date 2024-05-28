@@ -1,20 +1,16 @@
 package io.github.dhruvphumbra.dwollaapiclient
 
 import cats.effect.Concurrent
-import cats.syntax.all.*
-import io.chrisdavenport.mules.Cache
 import io.circe.Json
 import io.github.dhruvphumbra.dwollaapiclient.models.*
 import org.http4s.circe.*
 import org.http4s.dsl.io.*
-import org.http4s.headers.{Authorization, `Content-Type`}
-import org.http4s.{Headers, *}
+import org.http4s.*
 import org.typelevel.ci.CIStringSyntax
 
 import java.util.UUID
 
 trait DwollaApi[F[_]]:
-  def getAuthToken: F[String]
   def getAccountDetails(id: UUID): F[Json]
   def listFundingSourcesForAccount(id: UUID, removed: Option[Boolean]): F[Json]
   def createCustomer(customer: CreateCustomerRequest): F[Either[Throwable, UUID]]
@@ -30,159 +26,46 @@ trait DwollaApi[F[_]]:
 object DwollaApi:
   def apply[F[_]](implicit ev: DwollaApi[F]): DwollaApi[F] = ev
 
-  def impl[F[_] : Concurrent](httpBroker: HttpBroker[F])(config: Config, cache: Cache[F, String, String]): DwollaApi[F] =
+  def impl[F[_] : Concurrent](httpBroker: HttpBroker[F], baseUri: Uri): DwollaApi[F] =
     new DwollaApi[F]:
-      private val baseUri: Uri = config.baseUri
-
-      override def getAuthToken: F[String] =
-        cache
-          .lookup("dwolla-token")
-          .flatMap { t =>
-            t.fold(refreshAccessToken.flatMap(token => cache.insert("dwolla-token", token).as(token)))(_.pure[F])
-          }
-
-      private def refreshAccessToken: F[String] =
-        httpBroker
-          .makeRequest[AuthToken](
-            Request[F](
-              Method.POST,
-              baseUri / "token",
-              headers = Headers(
-                `Content-Type`(MediaType.application.`x-www-form-urlencoded`),
-                Authorization(BasicCredentials(config.clientId, config.clientSecret)),
-              )
-            ).withEntity(UrlForm("grant_type" -> "client_credentials"))
-          )
-          .map(_.access_token)
 
       override def getAccountDetails(id: UUID): F[Json] =
-        getAuthToken.flatMap(token => httpBroker.getResourceByUri[Json](token, baseUri / "accounts" / id))
+        httpBroker.get[Json](baseUri / "accounts" / id)
 
       override def listFundingSourcesForAccount(id: UUID, removed: Option[Boolean]): F[Json] =
-        getAuthToken.flatMap { token =>
-          httpBroker
-            .makeRequest[Json](
-              Request[F](
-                Method.GET,
-                baseUri / "accounts" / id / "funding-sources"
-                  +?? ("removed", removed),
-                headers = Headers(
-                  Header.Raw(ci"Accept", "application/vnd.dwolla.v1.hal+json"),
-                  `Content-Type`(MediaType.application.`json`),
-                  Authorization(Credentials.Token(AuthScheme.Bearer, token))
-                )
-              )
-            )
-        }
+        httpBroker.get[Json](baseUri / "accounts" / id / "funding-sources" +?? ("removed", removed))
 
       override def createCustomer(customer: CreateCustomerRequest): F[Either[Throwable, UUID]] =
-        getAuthToken.flatMap { token =>
-          httpBroker
-            .requestAndGetResourceId(
-              Request[F](
-                Method.POST,
-                baseUri / "customers",
-                headers = Headers(
-                  Header.Raw(ci"Accept", "application/vnd.dwolla.v1.hal+json"),
-                  `Content-Type`(MediaType.application.`json`),
-                  Authorization(Credentials.Token(AuthScheme.Bearer, token))
-                )
-              ).withEntity(customer)
-            )
-        }
+        httpBroker.createAndGetResourceId(baseUri / "customers", customer)
 
       override def getCustomer(id: UUID): F[Json] =
-        getAuthToken.flatMap(token => httpBroker.getResourceByUri[Json](token, baseUri / "customers" / id))
+        httpBroker.get[Json](baseUri / "customers" / id)
 
       override def listAndSearchCustomers(req: ListAndSearchCustomersRequest): F[Json] =
-        getAuthToken.flatMap { token =>
-          httpBroker
-            .makeRequest[Json](
-              Request[F](
-                Method.GET,
-                baseUri / "customers"
-                  +?? ("limit", req.limit)
-                  +?? ("offset", req.offset)
-                  +?? ("search", req.search)
-                  +?? ("email", req.email)
-                  +?? ("status", req.status),
-                headers = Headers(
-                  Header.Raw(ci"Accept", "application/vnd.dwolla.v1.hal+json"),
-                  `Content-Type`(MediaType.application.`json`),
-                  Authorization(Credentials.Token(AuthScheme.Bearer, token))
-                )
-              )
-            )
-        }
+        httpBroker
+          .get[Json](
+            baseUri / "customers"
+              +?? ("limit", req.limit)
+              +?? ("offset", req.offset)
+              +?? ("search", req.search)
+              +?? ("email", req.email)
+              +?? ("status", req.status)
+          )
 
       override def createFundingSourceForCustomer(id: UUID, fs: FundingSourceRequest): F[Either[Throwable, UUID]] =
-        getAuthToken.flatMap { token =>
-          httpBroker
-            .requestAndGetResourceId(
-              Request[F](
-                Method.POST,
-                baseUri / "customers" / id / "funding-sources",
-                headers = Headers(
-                  Header.Raw(ci"Accept", "application/vnd.dwolla.v1.hal+json"),
-                  `Content-Type`(MediaType.application.`json`),
-                  Authorization(Credentials.Token(AuthScheme.Bearer, token))
-                )
-              ).withEntity(fs)
-            )
-        }
+        httpBroker.createAndGetResourceId(baseUri / "customers" / id / "funding-sources", fs)
 
       override def getFundingSource(id: UUID): F[Json] =
-        getAuthToken.flatMap(token => httpBroker.getResourceByUri[Json](token, baseUri / "funding-sources" / id))
+        httpBroker.get[Json](baseUri / "funding-sources" / id)
 
       override def listFundingSourceForCustomer(id: UUID, removed: Option[Boolean]): F[Json] =
-        getAuthToken.flatMap { token =>
-          httpBroker
-            .makeRequest[Json](
-              Request[F](
-                Method.GET,
-                baseUri / "customers" / id / "funding-sources"
-                  +?? ("removed", removed),
-                headers = Headers(
-                  Header.Raw(ci"Accept", "application/vnd.dwolla.v1.hal+json"),
-                  `Content-Type`(MediaType.application.`json`),
-                  Authorization(Credentials.Token(AuthScheme.Bearer, token))
-                )
-              )
-            )
-        }
+        httpBroker.get[Json](baseUri / "customers" / id / "funding-sources" +?? ("removed", removed))
 
       override def updateFundingSource(id: UUID, req: UpdateFundingSourceRequest): F[Json] =
-        getAuthToken.flatMap { token =>
-          httpBroker
-            .makeRequest(
-              Request[F](
-                Method.POST,
-                baseUri / "funding-sources" / id,
-                headers = Headers(
-                  Header.Raw(ci"Accept", "application/vnd.dwolla.v1.hal+json"),
-                  `Content-Type`(MediaType.application.`json`),
-                  Authorization(Credentials.Token(AuthScheme.Bearer, token))
-                )
-              ).withEntity(req)
-            )
-        }
+        httpBroker.update[UpdateFundingSourceRequest, Json](baseUri / "funding-sources" / id, req)
 
       override def createTransfer(req: TransferRequest, ik: Option[String]): F[Either[Throwable, UUID]] =
-        getAuthToken.flatMap { token =>
-          httpBroker
-            .requestAndGetResourceId(
-              Request[F](
-                Method.POST,
-                baseUri / "transfers",
-                headers = Headers(
-                  Header.Raw(ci"Accept", "application/vnd.dwolla.v1.hal+json"),
-                  `Content-Type`(MediaType.application.`json`),
-                  Authorization(Credentials.Token(AuthScheme.Bearer, token)),
-                  ik.map(Header.Raw(ci"Idempotency-Key", _))
-                )
-              ).withEntity(req)
-            )
-        }
+        httpBroker.createAndGetResourceId(baseUri / "transfers", req, ik.map(Header.Raw(ci"Idempotency-Key", _)).toList: _*)
 
       override def getTransfer(id: UUID): F[Json] =
-        getAuthToken.flatMap(token => httpBroker.getResourceByUri[Json](token, baseUri / "transfers" / id))
+        httpBroker.get[Json](baseUri / "transfers" / id)
