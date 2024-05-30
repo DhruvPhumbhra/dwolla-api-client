@@ -13,14 +13,14 @@ import java.util.UUID
 trait DwollaApi[F[_]]:
   def getAccountDetails(id: UUID): F[Json]
   def listFundingSourcesForAccount(id: UUID, removed: Option[Boolean]): F[Json]
-  def createCustomer(customer: CreateCustomerRequest): F[Either[Throwable, UUID]]
+  def createCustomer(customer: CreateCustomerRequest): F[Option[UUID]]
   def getCustomer(id: UUID): F[Json]
   def listAndSearchCustomers(req: ListAndSearchCustomersRequest): F[Json]
-  def createFundingSourceForCustomer(id: UUID, req: FundingSourceRequest): F[Either[Throwable, UUID]]
+  def createFundingSourceForCustomer(id: UUID, req: FundingSourceRequest): F[Option[UUID]]
   def getFundingSource(id: UUID): F[Json]
   def listFundingSourceForCustomer(id: UUID, removed: Option[Boolean]): F[Json]
   def updateFundingSource(id: UUID, req: UpdateFundingSourceRequest): F[Json]
-  def createTransfer(req: TransferRequest, ik: Option[String]): F[Either[Throwable, UUID]]
+  def createTransfer(req: TransferRequest, ik: Option[String]): F[Option[UUID]]
   def getTransfer(id: UUID): F[Json]
 
 object DwollaApi:
@@ -35,7 +35,7 @@ object DwollaApi:
       override def listFundingSourcesForAccount(id: UUID, removed: Option[Boolean]): F[Json] =
         httpBroker.get[Json](baseUri / "accounts" / id / "funding-sources" +?? ("removed", removed))
 
-      override def createCustomer(customer: CreateCustomerRequest): F[Either[Throwable, UUID]] =
+      override def createCustomer(customer: CreateCustomerRequest): F[Option[UUID]] =
         httpBroker.createAndGetResourceId(baseUri / "customers", customer)
 
       override def getCustomer(id: UUID): F[Json] =
@@ -52,7 +52,7 @@ object DwollaApi:
               +?? ("status", req.status)
           )
 
-      override def createFundingSourceForCustomer(id: UUID, fs: FundingSourceRequest): F[Either[Throwable, UUID]] =
+      override def createFundingSourceForCustomer(id: UUID, fs: FundingSourceRequest): F[Option[UUID]] =
         httpBroker.createAndGetResourceId(baseUri / "customers" / id / "funding-sources", fs)
 
       override def getFundingSource(id: UUID): F[Json] =
@@ -64,7 +64,7 @@ object DwollaApi:
       override def updateFundingSource(id: UUID, req: UpdateFundingSourceRequest): F[Json] =
         httpBroker.update[UpdateFundingSourceRequest, Json](baseUri / "funding-sources" / id, req)
 
-      override def createTransfer(req: TransferRequest, ik: Option[String]): F[Either[Throwable, UUID]] =
+      override def createTransfer(req: TransferRequest, ik: Option[String]): F[Option[UUID]] =
         httpBroker.createAndGetResourceId(baseUri / "transfers", req, ik.map(Header.Raw(ci"Idempotency-Key", _)).toList: _*)
 
       override def getTransfer(id: UUID): F[Json] =

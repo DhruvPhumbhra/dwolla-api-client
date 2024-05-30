@@ -24,24 +24,17 @@ object Main extends IOApp:
   def runImpl[F[_] : Async](config: Config): F[ExitCode] = {
     for {
         client <- EmberClientBuilder.default[F].build
-        cache <- MemoryCache.ofSingleImmutableMap[F, String, AuthToken](TimeSpec.fromDuration(59.minutes)).toResource
-        dwollaAuthorizer = DwollaAuthorizer.impl[F](client, config.baseUri)(cache)
+//        cache <- MemoryCache.ofSingleImmutableMap[F, String, AuthToken](TimeSpec.fromDuration(59.minutes)).toResource
+        dwollaAuthorizer <- DwollaAuthorizer[F](client, config.baseUri)
         dwollaAuthMiddleware = DwollaAuthMiddleware[F](dwollaAuthorizer, config.clientId, config.clientSecret, client)
         httpBrokerAlg = HttpBroker.impl[F](dwollaAuthMiddleware)
         dwollaApiAlg = DwollaApi.impl[F](httpBrokerAlg, config.baseUri)
 
-        accountDetails <- dwollaApiAlg.getAccountDetails(UUID.fromString("a066fff3-93ce-48e1-a496-b3b0e9e89b7d")).toResource
-        _ = println(s"account details are $accountDetails")
-
-//        badAccount <- dwollaApiAlg.getAccountDetails(UUID.fromString("87e2cc08-e317-4ee2-807c-0101b8ae9a81")).toResource
-//        _ = println(s"bad account details are $badAccount")
+//        accountDetails <- dwollaApiAlg.getAccountDetails(UUID.fromString("a066fff3-93ce-48e1-a496-b3b0e9e89b7d")).toResource
+//        _ = println(s"account details are $accountDetails")
 
 //        badFs <- dwollaApiAlg.listFundingSourcesForAccount(UUID.fromString("87e2cc08-e317-4ee2-807c-0101b8ae9a81"), None).toResource
 //        _ = println(s"bad fs details are $badFs")
-
-//        token <- (1 to 10).toList.map(_ => dwollaApiAlg.getAuthToken).sequence.toResource
-//        _ = println(s"token is $token")
-
 
 //        ucr <- dwollaApiAlg.createCustomer(CreateCustomerRequest.CreateReceiveOnlyCustomerRequest("first", "last", "fake7@email.com")).toResource
 //        _ = println(s"UCR creation response is $ucr")
@@ -52,10 +45,10 @@ object Main extends IOApp:
         //      vpc <- dwollaApiAlg.createCustomer(CreateCustomerRequest.CreateVerifiedPersonalCustomerRequest("first", "last", "vpc@email.com", "123 main st", "Chicago", "IL", "60123", "1990-01-01", "6789")).toResource
         //      _ = println(s"VPC creation response status is $vpc")
         //
-        //      sp <- dwollaApiAlg.createCustomer(
-        //        CreateCustomerRequest.CreateVerifiedSoleProprietorshipCustomerRequest("first", "last", "sp@email.com", "123 main st", "Chicago", "IL", "60123", "1990-01-01", "6789", "SP biz", "9ed3f670-7d6f-11e3-b1ce-5404a6144203")
-        //      ).toResource
-        //      _ = println(s"SP creation response status is $sp")
+              sp <- dwollaApiAlg.createCustomer(
+                CreateCustomerRequest.CreateVerifiedSoleProprietorshipCustomerRequest("first", "last", "sp+1@email.com", "123 main st", "Chicago", "IL", "60123", "1990-01-01", "6789", "SP biz", "9ed3f670-7d6f-11e3-b1ce-5404a6144203")
+              ).toResource
+              _ = println(s"SP creation response status is $sp")
         //
         //      llc <- dwollaApiAlg.createCustomer(
         //        CreateCustomerRequest.CreateVerifiedBusinessCustomerRequest(
@@ -90,12 +83,9 @@ object Main extends IOApp:
 
 //        getFs <- dwollaApiAlg.getFundingSource(UUID.fromString("c899b4a8-0026-4df5-81c5-ab952a2e285c")).toResource
 //        _ = println(s"get funding source is $getFs")
-//          x = UpdateFundingSourceRequest(name = Some("Newer Bank")).asJson
-//          _ = println(x)
 //
-//
-        updateFs <- dwollaApiAlg.updateFundingSource(UUID.fromString("c899b4a8-0026-4df5-81c5-ab952a2e285c"), UpdateFundingSourceRequest(`type` = Some(FundingSourceType.Checking))).toResource
-        _ = println(s"update funding source is $updateFs")
+//        updateFs <- dwollaApiAlg.updateFundingSource(UUID.fromString("c899b4a8-0026-4df5-81c5-ab952a2e285c"), UpdateFundingSourceRequest(`type` = Some(FundingSourceType.Checking))).toResource
+//        _ = println(s"update funding source is $updateFs")
 
 //        createTx <- dwollaApiAlg.createTransfer(
 //          AchTransferRequest(
