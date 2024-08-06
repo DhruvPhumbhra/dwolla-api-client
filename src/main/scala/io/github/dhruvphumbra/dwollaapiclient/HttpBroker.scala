@@ -31,4 +31,4 @@ object HttpBroker:
       }
 
     override def update[T, U](uri: Uri, entity: T)(implicit entityEncoder: EntityEncoder[F, T], entityDecoder: EntityDecoder[F, U]): F[U] =
-      C.expect[U](Request[F](Method.GET, uri).withEntity(entity))
+      C.expect[U](Request[F](Method.POST, uri).withEntity(entity))
