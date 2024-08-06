@@ -1,4 +1,4 @@
-package io.github.dhruvphumbra.dwollaapiclient.models
+package io.github.dhruvphumbra.dwollaapiclient.models.responses
 
 import cats.effect.Concurrent
 import io.circe.Decoder

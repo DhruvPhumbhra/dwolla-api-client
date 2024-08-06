@@ -1,8 +1,10 @@
-package io.github.dhruvphumbra.dwollaapiclient.models
+package io.github.dhruvphumbra.dwollaapiclient.models.requests
 
 import cats.effect.Concurrent
 import io.circe.derivation.{Configuration, ConfiguredEncoder}
 import io.circe.{Decoder, Encoder}
+import io.github.dhruvphumbra.dwollaapiclient.models.*
+import io.github.dhruvphumbra.dwollaapiclient.models.common.BusinessController
 import org.http4s.*
 import org.http4s.circe.*
 
@@ -12,9 +14,9 @@ object CreateCustomerRequest:
     ConfiguredEncoder
       .derive[CreateCustomerRequest](discriminator = Some("__requestType"))
       .mapJson(_.deepDropNullValues.mapObject(_.remove("__requestType")))
-  given[F[_] : Concurrent]: EntityDecoder[F, CreateCustomerRequest] = jsonOf
 
   given[F[_] : Concurrent]: EntityEncoder[F, CreateCustomerRequest] = jsonEncoderOf
+  
 enum CreateCustomerRequest derives Decoder:
   case CreateReceiveOnlyCustomerRequest(
                                          firstName: String,
@@ -98,28 +100,3 @@ enum CreateCustomerRequest derives Decoder:
                                               correlationId: Option[String] = None,
                                               private val `type`: String = "business",
                                             )
-
-final case class ControllerAddress(
-                                    address1: String,
-                                    address2: Option[String] = None,
-                                    address3: Option[String] = None,
-                                    city: String,
-                                    stateProvinceRegion: String,
-                                    postalCode: Option[String],
-                                    country: String,
-                                  ) derives Decoder, Encoder.AsObject
-
-final case class ControllerPassport(
-                                     number: Option[String],
-                                     country: Option[String],
-                                   ) derives Decoder, Encoder.AsObject
-
-final case class BusinessController(
-                                     firstName: String,
-                                     lastName: String,
-                                     title: String,
-                                     dateOfBirth: String,
-                                     address: ControllerAddress,
-                                     passport: Option[ControllerPassport],
-                                     ssn: Option[String] = None,
-                                   ) derives Decoder, Encoder.AsObject

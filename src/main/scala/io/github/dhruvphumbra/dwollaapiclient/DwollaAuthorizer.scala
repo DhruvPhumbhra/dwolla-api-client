@@ -4,7 +4,7 @@ import cats.syntax.all.*
 import cats.effect.{Concurrent, Resource, Temporal}
 import cats.effect.syntax.resource.*
 import io.chrisdavenport.mules.{Cache, MemoryCache, TimeSpec}
-import io.github.dhruvphumbra.dwollaapiclient.models.AuthToken
+import io.github.dhruvphumbra.dwollaapiclient.models.responses.AuthToken
 import org.http4s.{BasicCredentials, Headers, MediaType, Method, Request, Uri, UrlForm}
 import org.http4s.client.Client
 import org.http4s.headers.{Authorization, `Content-Type`}

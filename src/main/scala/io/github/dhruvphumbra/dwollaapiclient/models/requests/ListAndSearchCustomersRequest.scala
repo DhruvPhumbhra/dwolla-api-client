@@ -1,4 +1,4 @@
-package io.github.dhruvphumbra.dwollaapiclient.models
+package io.github.dhruvphumbra.dwollaapiclient.models.requests
 
 case class ListAndSearchCustomersRequest(
                                           limit: Option[Int] = None,
