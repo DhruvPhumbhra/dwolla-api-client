@@ -1,8 +1,8 @@
 package io.github.dhruvphumbra
 
-import io.circe.{Codec, Decoder, Encoder}
+import io.circe.*
 
-import scala.compiletime.{constValue, summonAll}
+import scala.compiletime.summonAll
 import scala.deriving.Mirror
 
 package object dwollaapiclient:

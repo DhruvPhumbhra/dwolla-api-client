@@ -4,7 +4,7 @@ import cats.effect.Concurrent
 import cats.syntax.all.*
 import org.http4s.Method.GET
 import org.http4s.client.Client
-import org.http4s.{EntityDecoder, EntityEncoder, Header, Method, Request, Uri}
+import org.http4s.{EntityDecoder, EntityEncoder, Header, Method, Request, Status, Uri}
 import org.typelevel.ci.CIStringSyntax
 
 import java.util.UUID

@@ -1,14 +1,17 @@
 package io.github.dhruvphumbra.dwollaapiclient
 
+import cats.{ApplicativeError, ApplicativeThrow}
 import cats.effect.Concurrent
+import cats.effect.kernel.MonadCancelThrow
+import cats.syntax.all.*
 import io.circe.Json
 import io.github.dhruvphumbra.dwollaapiclient.models.*
-import io.github.dhruvphumbra.dwollaapiclient.models.common.*
 import io.github.dhruvphumbra.dwollaapiclient.models.requests.*
 import io.github.dhruvphumbra.dwollaapiclient.models.responses.*
-import org.http4s.circe.*
-import org.http4s.dsl.io.*
 import org.http4s.*
+import org.http4s.circe.*
+import org.http4s.client.UnexpectedStatus
+import org.http4s.dsl.io.*
 import org.typelevel.ci.CIStringSyntax
 
 import java.util.UUID
@@ -29,7 +32,7 @@ trait DwollaApi[F[_]]:
 object DwollaApi:
   def apply[F[_]](implicit ev: DwollaApi[F]): DwollaApi[F] = ev
 
-  def impl[F[_] : Concurrent](httpBroker: HttpBroker[F], baseUri: Uri): DwollaApi[F] =
+  def impl[F[_] : Concurrent : MonadCancelThrow](httpBroker: HttpBroker[F], baseUri: Uri): DwollaApi[F] =
     new DwollaApi[F]:
 
       override def getAccountDetails(id: UUID): F[AccountDetailsResponse] =
